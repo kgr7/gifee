@@ -38,6 +38,7 @@ export function Timeline({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
+    console.log("rendering timeline");
     const resizeObserver = new ResizeObserver(entries => {
       for (const entry of entries) {
         setContainerWidth(entry.contentRect.width);
@@ -98,71 +99,79 @@ export function Timeline({
   return (
     <div
       ref={containerRef}
-      className="relative h-24 bg-default-100 rounded-lg overflow-hidden"
+      className="relative h-24 bg-default-100 rounded-lg"
       onPointerMove={handlePointerMove}
-      touch-action="none"
+      style={{ touchAction: 'none' }}
     >
-      {/* Scrollable Container */}
-      <div
-        ref={scrollContainerRef}
-        className="absolute inset-0 overflow-x-auto whitespace-nowrap hide-scrollbar"
-      >
-        {/* Thumbnails */}
-        <div 
-          className="flex h-full"
-          style={{ minWidth: `${Math.max(containerWidth, (duration * 50))}px` }}
+      {/* Main Container */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Scrollable Container */}
+        <div
+          ref={scrollContainerRef}
+          className="absolute inset-0 overflow-x-auto no-scrollbar"
+          style={{ 
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
         >
-          {frames.map((frame, index) => (
+          {/* Thumbnails Container */}
+          <div 
+            className="relative flex h-full"
+            style={{ minWidth: `${Math.max(containerWidth, (duration * 50))}px` }}
+          >
+            {/* Thumbnails */}
+            {frames.map((frame, index) => (
+              <div
+                key={index}
+                className="h-full relative"
+                style={{
+                  backgroundImage: `url(${frame})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  width: `${100 / frames.length}%`,
+                }}
+              />
+            ))}
+
+            {/* Selection Overlay */}
             <div
-              key={index}
-              className="h-full"
+              className="absolute inset-y-0 bg-primary/30 z-10"
               style={{
-                backgroundImage: `url(${frame})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                width: `${100 / frames.length}%`,
+                left: `${(startTime / duration) * 100}%`,
+                width: `${((endTime - startTime) / duration) * 100}%`,
               }}
             />
-          ))}
-        </div>
 
-        {/* Selection Overlay */}
-        <div
-          className="absolute inset-y-0 bg-primary/30"
-          style={{
-            left: `${(startTime / duration) * 100}%`,
-            width: `${((endTime - startTime) / duration) * 100}%`,
-          }}
-        />
+            {/* Cursors */}
+            <div
+              className="absolute inset-y-0 w-1 bg-primary cursor-ew-resize z-20 hover:w-2 transition-all"
+              style={{ left: `${(startTime / duration) * 100}%` }}
+              onPointerDown={handlePointerDown('start')}
+              onPointerUp={handlePointerUp}
+            >
+              <div className="absolute bottom-0 left-2 text-xs bg-primary text-white px-1 py-0.5 rounded whitespace-nowrap z-30">
+                {formatTime(startTime)}
+              </div>
+            </div>
 
-        {/* Cursors */}
-        <div
-          className="absolute inset-y-0 w-1 bg-primary cursor-ew-resize"
-          style={{ left: `${(startTime / duration) * 100}%` }}
-          onPointerDown={handlePointerDown('start')}
-          onPointerUp={handlePointerUp}
-        >
-          <div className="absolute bottom-0 left-2 text-xs bg-primary text-white px-1 py-0.5 rounded">
-            {formatTime(startTime)}
+            <div
+              className="absolute inset-y-0 w-1 bg-primary cursor-ew-resize z-20 hover:w-2 transition-all"
+              style={{ left: `${(endTime / duration) * 100}%` }}
+              onPointerDown={handlePointerDown('end')}
+              onPointerUp={handlePointerUp}
+            >
+              <div className="absolute bottom-0 right-2 text-xs bg-primary text-white px-1 py-0.5 rounded whitespace-nowrap z-30">
+                {formatTime(endTime)}
+              </div>
+            </div>
+
+            {/* Current Time Indicator */}
+            <div
+              className="absolute inset-y-0 w-0.5 bg-white pointer-events-none z-[15]"
+              style={{ left: `${(currentFrame / duration) * 100}%` }}
+            />
           </div>
         </div>
-
-        <div
-          className="absolute inset-y-0 w-1 bg-primary cursor-ew-resize"
-          style={{ left: `${(endTime / duration) * 100}%` }}
-          onPointerDown={handlePointerDown('end')}
-          onPointerUp={handlePointerUp}
-        >
-          <div className="absolute bottom-0 right-2 text-xs bg-primary text-white px-1 py-0.5 rounded">
-            {formatTime(endTime)}
-          </div>
-        </div>
-
-        {/* Current Time Indicator */}
-        <div
-          className="absolute inset-y-0 w-0.5 bg-white pointer-events-none"
-          style={{ left: `${(currentFrame / duration) * 100}%` }}
-        />
       </div>
     </div>
   );

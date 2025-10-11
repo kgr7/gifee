@@ -24,6 +24,7 @@ export function VideoConverter() {
     setStartTime(0);
     setEndTime(0);
     setIsPlaying(false);
+    console.log("file selected:", file.name);
   };
 
   const handleLoadedMetadata = (metadata: VideoMetadata) => {
