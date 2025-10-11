@@ -75,10 +75,12 @@ export function VideoConverter() {
           </div>
           
           <div className="lg:col-span-1">
-            <SettingsPanel
-              fps={fps}
-              onFpsChange={setFps}
-            />
+            <div className="sticky top-6">
+              <SettingsPanel
+                fps={fps}
+                onFpsChange={setFps}
+              />
+            </div>
           </div>
         </div>
       )}

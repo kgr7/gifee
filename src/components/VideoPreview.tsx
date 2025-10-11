@@ -1,4 +1,4 @@
-import { RefObject, useEffect } from 'react';
+import { RefObject, useEffect, useState } from 'react';
 import { Button, Spinner } from '@heroui/react';
 import { PlayIcon, PauseIcon } from '@heroicons/react/24/solid';
 import { useVideoLoop } from '@/hooks/useVideoLoop';
@@ -23,15 +23,20 @@ export function VideoPreview({
   onPlayStateChange,
   onLoadedMetadata,
 }: VideoPreviewProps) {
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   useVideoLoop({ videoRef, startTime, endTime, isPlaying });
 
   useEffect(() => {
     if (!videoFile) return;
-    const videoUrl = URL.createObjectURL(videoFile);
+    const url = URL.createObjectURL(videoFile);
+    setVideoUrl(url);
     if (videoRef.current) {
-      videoRef.current.src = videoUrl;
+      videoRef.current.src = url;
     }
-    return () => URL.revokeObjectURL(videoUrl);
+    return () => {
+      URL.revokeObjectURL(url);
+      setVideoUrl(null);
+    };
   }, [videoFile, videoRef]);
 
   const handleLoadedMetadata = () => {
@@ -57,14 +62,21 @@ export function VideoPreview({
   };
 
   return (
-    <div className="relative aspect-video bg-black">
-      <video
-        ref={videoRef}
-        className="w-full h-full object-contain"
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={() => onPlayStateChange(false)}
-        controls={false}
-      />
+    <div className="relative bg-black">
+      <div 
+        className="w-full"
+        style={{ 
+          paddingTop: `${videoRef.current ? (videoRef.current.videoHeight / videoRef.current.videoWidth) * 100 : 56.25}%` 
+        }}
+      >
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-contain"
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={() => onPlayStateChange(false)}
+          controls={false}
+          data-video-url={videoUrl || ''} /* Expose URL for useFrameExtraction */
+        />
       
       {!videoRef.current?.readyState ? (
         <div className="absolute inset-0 flex items-center justify-center">
@@ -84,6 +96,7 @@ export function VideoPreview({
           )}
         </Button>
       )}
+    </div>
     </div>
   );
 }

@@ -22,7 +22,8 @@ export function Timeline({
   const containerRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState<'start' | 'end' | null>(null);
   const [currentFrame, setCurrentFrame] = useState<number>(0);
-  const frames = useFrameExtraction({ videoRef, duration });
+  const videoUrl = videoRef.current?.getAttribute('data-video-url') || undefined;
+  const frames = useFrameExtraction({ videoRef, duration, videoUrl });
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -33,96 +34,136 @@ export function Timeline({
     return () => videoRef.current?.removeEventListener('timeupdate', handleTimeUpdate);
   }, [videoRef]);
 
-  const handleMouseDown = (type: 'start' | 'end') => (e: React.MouseEvent) => {
+  const [containerWidth, setContainerWidth] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  const handlePointerDown = (type: 'start' | 'end') => (e: React.PointerEvent) => {
     setIsDragging(type);
+    const target = e.currentTarget as HTMLDivElement;
+    target.setPointerCapture(e.pointerId);
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const updateTime = (clientX: number) => {
     if (!isDragging || !containerRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percentage = Math.max(0, Math.min(1, x / rect.width));
+    const scrollLeft = scrollContainerRef.current?.scrollLeft || 0;
+    const x = clientX - rect.left + scrollLeft;
+    const percentage = Math.max(0, Math.min(1, x / (containerWidth + scrollLeft)));
     const time = percentage * duration;
 
     if (isDragging === 'start') {
-      onStartTimeChange(Math.min(time, endTime - 0.1));
+      const newTime = Math.min(time, endTime - 0.1);
+      onStartTimeChange(newTime);
+      if (videoRef.current) {
+        videoRef.current.currentTime = newTime;
+      }
     } else {
-      onEndTimeChange(Math.max(time, startTime + 0.1));
+      const newTime = Math.max(time, startTime + 0.1);
+      onEndTimeChange(newTime);
+      if (videoRef.current) {
+        videoRef.current.currentTime = newTime;
+      }
     }
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(null);
-  };
-
-  useEffect(() => {
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove as any);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove as any);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
+      e.preventDefault();
+      updateTime(e.clientX);
     }
-  }, [isDragging]);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (isDragging) {
+      (e.target as HTMLDivElement).releasePointerCapture(e.pointerId);
+      setIsDragging(null);
+    }
+  };
 
   return (
     <div
       ref={containerRef}
       className="relative h-24 bg-default-100 rounded-lg overflow-hidden"
-      onMouseMove={handleMouseMove}
+      onPointerMove={handlePointerMove}
+      touch-action="none"
     >
-      {/* Thumbnails */}
-      <div className="absolute inset-0 flex">
-        {frames.map((frame, index) => (
-          <div
-            key={index}
-            className="h-full flex-1"
-            style={{
-              backgroundImage: `url(${frame})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Selection Overlay */}
+      {/* Scrollable Container */}
       <div
-        className="absolute inset-y-0 bg-primary/30"
-        style={{
-          left: `${(startTime / duration) * 100}%`,
-          width: `${((endTime - startTime) / duration) * 100}%`,
-        }}
-      />
-
-      {/* Cursors */}
-      <div
-        className="absolute inset-y-0 w-1 bg-primary cursor-ew-resize"
-        style={{ left: `${(startTime / duration) * 100}%` }}
-        onMouseDown={handleMouseDown('start')}
+        ref={scrollContainerRef}
+        className="absolute inset-0 overflow-x-auto whitespace-nowrap hide-scrollbar"
       >
-        <div className="absolute bottom-0 left-2 text-xs bg-primary text-white px-1 py-0.5 rounded">
-          {formatTime(startTime)}
+        {/* Thumbnails */}
+        <div 
+          className="flex h-full"
+          style={{ minWidth: `${Math.max(containerWidth, (duration * 50))}px` }}
+        >
+          {frames.map((frame, index) => (
+            <div
+              key={index}
+              className="h-full"
+              style={{
+                backgroundImage: `url(${frame})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                width: `${100 / frames.length}%`,
+              }}
+            />
+          ))}
         </div>
-      </div>
 
-      <div
-        className="absolute inset-y-0 w-1 bg-primary cursor-ew-resize"
-        style={{ left: `${(endTime / duration) * 100}%` }}
-        onMouseDown={handleMouseDown('end')}
-      >
-        <div className="absolute bottom-0 right-2 text-xs bg-primary text-white px-1 py-0.5 rounded">
-          {formatTime(endTime)}
+        {/* Selection Overlay */}
+        <div
+          className="absolute inset-y-0 bg-primary/30"
+          style={{
+            left: `${(startTime / duration) * 100}%`,
+            width: `${((endTime - startTime) / duration) * 100}%`,
+          }}
+        />
+
+        {/* Cursors */}
+        <div
+          className="absolute inset-y-0 w-1 bg-primary cursor-ew-resize"
+          style={{ left: `${(startTime / duration) * 100}%` }}
+          onPointerDown={handlePointerDown('start')}
+          onPointerUp={handlePointerUp}
+        >
+          <div className="absolute bottom-0 left-2 text-xs bg-primary text-white px-1 py-0.5 rounded">
+            {formatTime(startTime)}
+          </div>
         </div>
-      </div>
 
-      {/* Current Time Indicator */}
-      <div
-        className="absolute inset-y-0 w-0.5 bg-white pointer-events-none"
-        style={{ left: `${(currentFrame / duration) * 100}%` }}
-      />
+        <div
+          className="absolute inset-y-0 w-1 bg-primary cursor-ew-resize"
+          style={{ left: `${(endTime / duration) * 100}%` }}
+          onPointerDown={handlePointerDown('end')}
+          onPointerUp={handlePointerUp}
+        >
+          <div className="absolute bottom-0 right-2 text-xs bg-primary text-white px-1 py-0.5 rounded">
+            {formatTime(endTime)}
+          </div>
+        </div>
+
+        {/* Current Time Indicator */}
+        <div
+          className="absolute inset-y-0 w-0.5 bg-white pointer-events-none"
+          style={{ left: `${(currentFrame / duration) * 100}%` }}
+        />
+      </div>
     </div>
   );
 }

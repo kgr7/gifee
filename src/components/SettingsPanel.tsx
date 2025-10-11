@@ -20,9 +20,9 @@ export function SettingsPanel({ fps, onFpsChange }: SettingsPanelProps) {
             step={1}
             minValue={1}
             maxValue={60}
-            defaultValue={fps}
             value={fps}
-            onChange={onFpsChange}
+            onChange={(v) => onFpsChange(Array.isArray(v) ? v[0] : v as number)}
+            onChangeEnd={(v) => onFpsChange(Array.isArray(v) ? v[0] : v as number)}
             className="max-w-md"
           />
           <div className="mt-1 text-sm text-gray-500">
