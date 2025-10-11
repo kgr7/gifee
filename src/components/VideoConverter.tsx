@@ -6,7 +6,6 @@ import { Timeline } from './Timeline';
 import { SettingsPanel } from './SettingsPanel';
 import { ExportButton } from './ExportButton';
 import { ThemeToggle } from './ThemeToggle';
-import { useVideoMetadata } from '@/hooks/useVideoMetadata';
 import type { VideoMetadata } from '@/types';
 
 export function VideoConverter() {
@@ -16,19 +15,20 @@ export function VideoConverter() {
   const [startTime, setStartTime] = useState(0);
   const [endTime, setEndTime] = useState(0);
   const [fps, setFps] = useState(15);
-  
-  const { metadata, isLoading } = useVideoMetadata(videoRef);
+  const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
 
   const handleFileSelect = (file: File) => {
     setVideoFile(file);
     setStartTime(0);
     setEndTime(0);
     setIsPlaying(false);
+    setMetadata(null);
     console.log("file selected:", file.name);
   };
 
   const handleLoadedMetadata = (metadata: VideoMetadata) => {
     setEndTime(metadata.duration);
+    setMetadata(metadata);
   };
 
   return (
@@ -54,7 +54,7 @@ export function VideoConverter() {
               />
             </Card>
             
-            {!isLoading && metadata && (
+            {metadata && (
               <Card className="p-4">
                 <Timeline
                   videoRef={videoRef}
@@ -69,7 +69,7 @@ export function VideoConverter() {
 
             <div className="flex justify-center">
               <ExportButton
-                disabled={isLoading || !metadata}
+                disabled={!metadata}
                 onClick={() => {/* Implement in future */}}
               />
             </div>
