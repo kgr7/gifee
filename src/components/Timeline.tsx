@@ -27,12 +27,39 @@ export function Timeline({
 
   useEffect(() => {
     if (!videoRef.current) return;
-    const handleTimeUpdate = () => {
-      setCurrentFrame(videoRef.current?.currentTime || 0);
+    
+    let animationFrameId: number;
+    
+    const updateCursor = () => {
+      if (!videoRef.current) return;
+      const time = Math.min(videoRef.current.currentTime, endTime);
+      setCurrentFrame(time);
+      animationFrameId = requestAnimationFrame(updateCursor);
     };
-    videoRef.current.addEventListener('timeupdate', handleTimeUpdate);
-    return () => videoRef.current?.removeEventListener('timeupdate', handleTimeUpdate);
-  }, [videoRef]);
+
+    // Start animation frame loop when video is playing
+    const handlePlay = () => {
+      updateCursor();
+    };
+
+    // Stop animation frame loop when video is paused
+    const handlePause = () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+
+    videoRef.current.addEventListener('play', handlePlay);
+    videoRef.current.addEventListener('pause', handlePause);
+    videoRef.current.addEventListener('seeked', updateCursor);
+
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.removeEventListener('play', handlePlay);
+        videoRef.current.removeEventListener('pause', handlePause);
+        videoRef.current.removeEventListener('seeked', updateCursor);
+      }
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [videoRef, endTime]);
 
   const [containerWidth, setContainerWidth] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -167,8 +194,12 @@ export function Timeline({
 
             {/* Current Time Indicator */}
             <div
-              className="absolute inset-y-0 w-0.5 bg-white pointer-events-none z-[15]"
-              style={{ left: `${(currentFrame / duration) * 100}%` }}
+              className="absolute inset-y-0 w-0.5 bg-white pointer-events-none z-[15] will-change-[left]"
+              style={{ 
+                left: `${(currentFrame / duration) * 100}%`,
+                touchAction: 'none',
+                userSelect: 'none'
+              }}
             />
           </div>
         </div>

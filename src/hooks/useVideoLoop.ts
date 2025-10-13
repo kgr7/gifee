@@ -42,7 +42,8 @@ export function useVideoLoop({
       // Ensure we're within bounds
       if (video.currentTime < startTime) {
         video.currentTime = startTime;
-      } else if (video.currentTime >= endTime) {
+      } else if (video.currentTime > endTime) {
+        video.pause();
         video.currentTime = startTime;
       }
     };
