@@ -18,6 +18,36 @@ A modern React-based video to GIF converter that runs entirely in the browser. B
 - TypeScript
 - Vite
 - HeroUI (formerly NextUI)
+- requestVideoFrameCallback API for efficient frame extraction
+- Canvas API for video frame processing
+
+## Project Structure
+
+- `src/components/` - React components for the user interface
+- `src/hooks/` - Custom React hooks for video and state management
+- `src/lib/` - Pure utility modules for video processing and other non-React logic
+- `src/types/` - TypeScript type definitions
+- `src/utils/` - Helper functions and utilities
+
+## Browser Compatibility
+
+### Required Features
+- WebAssembly support
+- HTMLVideoElement.requestVideoFrameCallback (with fallback to requestAnimationFrame)
+- Canvas API with 2D context
+- File API for video upload
+
+### Minimum Browser Versions
+- Chrome/Edge 83+
+- Firefox 132+ (Oct 2024)
+- Safari 15.4+
+- Opera 69+
+
+Note: Older browsers will use requestAnimationFrame fallback for frame extraction.
+
+## Architecture
+
+The application is designed with a clear separation between UI components (React) and processing logic (pure functions). The video processing utilities in `src/lib/` are designed to be Web Worker compatible, allowing for future offloading of heavy computation to background threads.
 - Tailwind CSS
 - Rust + WASM (planned)
 
