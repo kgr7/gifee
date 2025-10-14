@@ -1,0 +1,10 @@
+# Rust build artifacts
+target/
+Cargo.lock
+pkg/
+
+# Backup files
+**/*.rs.bk
+
+# OS files
+.DS_Store
