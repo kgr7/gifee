@@ -179,40 +179,57 @@ export function TimelineSlider({
 
             <div
                 ref={sliderRef}
-                className="relative h-16 bg-muted rounded-lg cursor-pointer select-none overflow-hidden"
+                className="relative h-16 cursor-pointer select-none"
             >
-                {/* Thumbnails Background */}
-                <div className="absolute inset-0 flex opacity-50 pointer-events-none">
-                    {thumbnails.map((src, index) => (
-                        <div key={index} className="flex-1 h-full relative overflow-hidden">
-                            <img
-                                src={src}
-                                alt={`frame-${index}`}
-                                className="w-full h-full object-cover"
-                                draggable={false}
-                            />
-                        </div>
-                    ))}
-                    {isGeneratingThumbnails && thumbnails.length === 0 && (
-                        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
-                            Loading previews...
-                        </div>
-                    )}
+                {/* Track Background & Content (Clipped) */}
+                <div className="absolute inset-0 bg-muted rounded-lg overflow-hidden">
+                    {/* Thumbnails Background */}
+                    <div className="absolute inset-0 flex opacity-50 pointer-events-none">
+                        {thumbnails.map((src, index) => (
+                            <div key={index} className="flex-1 h-full relative overflow-hidden">
+                                <img
+                                    src={src}
+                                    alt={`frame-${index}`}
+                                    className="w-full h-full object-cover"
+                                    draggable={false}
+                                />
+                            </div>
+                        ))}
+                        {isGeneratingThumbnails && thumbnails.length === 0 && (
+                            <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+                                Loading previews...
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Selected Range */}
+                    <div
+                        className="absolute top-0 bottom-0 bg-primary/20 border-y-2 border-primary z-10"
+                        style={{
+                            left: `${startPercent}%`,
+                            right: `${100 - endPercent}%`,
+                        }}
+                    />
+
+                    {/* Playback Cursor */}
+                    <div
+                        className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-30 ml-[8px]"
+                        style={{ left: `${(currentTime / duration) * 100}%` }}
+                    />
+
+                    {/* Time markers */}
+                    <div className="absolute inset-x-0 bottom-0 flex justify-between px-2 pb-1 text-xs text-white z-30 drop-shadow-md font-medium"
+                        style={{ marginLeft: '8px', marginRight: '8px' }}
+                    >
+                        <span>0:00</span>
+                        <span>{formatTime(duration)}</span>
+                    </div>
                 </div>
 
-                {/* Selected Range */}
-                <div
-                    className="absolute top-0 bottom-0 bg-primary/20 border-y-2 border-primary z-10"
-                    style={{
-                        left: `${startPercent}%`,
-                        right: `${100 - endPercent}%`,
-                    }}
-                />
-
-                {/* Start Handle */}
+                {/* Start Handle - Outside overflow container with high z-index */}
                 <div
                     className={cn(
-                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-20",
+                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-50",
                         dragging === 'start' && "scale-125 shadow-lg"
                     )}
                     style={{ left: `${startPercent}%`, transform: 'translate(-50%, -50%)' }}
@@ -223,10 +240,10 @@ export function TimelineSlider({
                     </div>
                 </div>
 
-                {/* End Handle */}
+                {/* End Handle - Outside overflow container with high z-index */}
                 <div
                     className={cn(
-                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-20",
+                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-50",
                         dragging === 'end' && "scale-125 shadow-lg"
                     )}
                     style={{ left: `${endPercent}%`, transform: 'translate(-50%, -50%)' }}
@@ -235,20 +252,6 @@ export function TimelineSlider({
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-0.5 h-4 bg-primary-foreground/50 rounded" />
                     </div>
-                </div>
-
-                {/* Playback Cursor */}
-                <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-30 ml-[8px]"
-                    style={{ left: `${(currentTime / duration) * 100}%` }}
-                />
-
-                {/* Time markers */}
-                <div className="absolute inset-x-0 bottom-0 flex justify-between px-2 pb-1 text-xs text-white z-30 drop-shadow-md font-medium"
-                    style={{ marginLeft: '8px', marginRight: '8px' }}
-                >
-                    <span>0:00</span>
-                    <span>{formatTime(duration)}</span>
                 </div>
             </div>
         </div>
