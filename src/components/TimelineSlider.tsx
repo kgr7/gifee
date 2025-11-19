@@ -20,6 +20,15 @@ export function TimelineSlider({
     const sliderRef = useRef<HTMLDivElement>(null);
     const [dragging, setDragging] = useState<'start' | 'end' | null>(null);
 
+    // Use refs to access latest values in event listeners without triggering re-renders
+    const startTimeRef = useRef(startTime);
+    const endTimeRef = useRef(endTime);
+
+    useEffect(() => {
+        startTimeRef.current = startTime;
+        endTimeRef.current = endTime;
+    }, [startTime, endTime]);
+
     const getTimeFromPosition = useCallback(
         (clientX: number): number => {
             if (!sliderRef.current) return 0;
@@ -46,12 +55,12 @@ export function TimelineSlider({
 
             if (dragging === 'start') {
                 // Ensure start time doesn't exceed end time
-                const newStartTime = Math.min(time, endTime - 1);
-                onTimeChange(newStartTime, endTime);
+                const newStartTime = Math.min(time, endTimeRef.current - 1);
+                onTimeChange(newStartTime, endTimeRef.current);
             } else {
                 // Ensure end time doesn't go below start time
-                const newEndTime = Math.max(time, startTime + 1);
-                onTimeChange(startTime, newEndTime);
+                const newEndTime = Math.max(time, startTimeRef.current + 1);
+                onTimeChange(startTimeRef.current, newEndTime);
             }
         };
 
@@ -66,7 +75,7 @@ export function TimelineSlider({
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [dragging, duration, startTime, endTime, getTimeFromPosition, onTimeChange]);
+    }, [dragging, getTimeFromPosition, onTimeChange]); // Removed startTime/endTime dependencies
 
     const startPercent = (startTime / duration) * 100;
     const endPercent = (endTime / duration) * 100;
@@ -80,7 +89,7 @@ export function TimelineSlider({
 
             <div
                 ref={sliderRef}
-                className="relative h-12 bg-muted rounded-lg cursor-pointer select-none"
+                className="relative h-16 bg-muted rounded-lg cursor-pointer select-none"
             >
                 {/* Selected Range */}
                 <div
@@ -94,7 +103,7 @@ export function TimelineSlider({
                 {/* Start Handle */}
                 <div
                     className={cn(
-                        "absolute top-1/2 -translate-y-1/2 w-4 h-8 bg-primary rounded cursor-ew-resize transition-all",
+                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize transition-all",
                         dragging === 'start' && "scale-125 shadow-lg"
                     )}
                     style={{ left: `${startPercent}%`, transform: 'translate(-50%, -50%)' }}
@@ -108,7 +117,7 @@ export function TimelineSlider({
                 {/* End Handle */}
                 <div
                     className={cn(
-                        "absolute top-1/2 -translate-y-1/2 w-4 h-8 bg-primary rounded cursor-ew-resize transition-all",
+                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize transition-all",
                         dragging === 'end' && "scale-125 shadow-lg"
                     )}
                     style={{ left: `${endPercent}%`, transform: 'translate(-50%, -50%)' }}
@@ -121,12 +130,14 @@ export function TimelineSlider({
 
                 {/* Playback Cursor */}
                 <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-10"
+                    className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-10 ml-[8px]"
                     style={{ left: `${(currentTime / duration) * 100}%` }}
                 />
 
                 {/* Time markers */}
-                <div className="absolute inset-x-0 bottom-0 flex justify-between px-2 pb-1 text-xs text-muted-foreground">
+                <div className="absolute inset-x-0 bottom-0 flex justify-between px-2 pb-1 text-xs text-muted-foreground"
+                    style={{ marginLeft: '8px', marginRight: '8px' }}
+                >
                     <span>0:00</span>
                     <span>{formatTime(duration)}</span>
                 </div>

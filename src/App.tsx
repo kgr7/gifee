@@ -32,7 +32,7 @@ function App() {
 
   const handleDurationChange = useCallback((duration: number) => {
     setVideoDuration(duration);
-    setEndTime(Math.min(duration, 10)); // Default to 10 seconds or video duration
+    setEndTime(duration);
   }, []);
 
   const handleTimeChange = useCallback((start: number, end: number) => {
