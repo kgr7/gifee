@@ -131,6 +131,7 @@ function App() {
                     endTime={endTime}
                     currentTime={currentTime}
                     onTimeChange={handleTimeChange}
+                    videoFile={videoFile}
                   />
 
                   <SettingsPanel
