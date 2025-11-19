@@ -5,6 +5,7 @@ interface VideoPreviewProps {
     videoFile: File;
     startTime: number;
     endTime: number;
+    currentTime: number;
     onDurationChange: (duration: number) => void;
     onTimeUpdate: (time: number) => void;
 }
@@ -13,6 +14,7 @@ export function VideoPreview({
     videoFile,
     startTime,
     endTime,
+    currentTime,
     onDurationChange,
     onTimeUpdate,
 }: VideoPreviewProps) {
@@ -37,20 +39,43 @@ export function VideoPreview({
             onDurationChange(video.duration);
         };
 
-        const handleTimeUpdate = () => {
+        let animationFrameId: number;
+
+        const checkTime = () => {
+            if (video.paused) {
+                animationFrameId = requestAnimationFrame(checkTime);
+                return;
+            }
+
             onTimeUpdate(video.currentTime);
+
             // Loop the video within the selected time range
-            if (video.currentTime < startTime || video.currentTime >= endTime) {
+            if (video.currentTime >= endTime) {
+                video.currentTime = startTime;
+                // Force play if it stopped
+                if (video.paused) video.play();
+            } else if (video.currentTime < startTime) {
                 video.currentTime = startTime;
             }
+
+            animationFrameId = requestAnimationFrame(checkTime);
         };
 
         video.addEventListener('loadedmetadata', handleLoadedMetadata);
-        video.addEventListener('timeupdate', handleTimeUpdate);
+        // Start the loop
+        animationFrameId = requestAnimationFrame(checkTime);
+
+        // Also listen to play/pause to ensure we don't miss state changes
+        const handlePlay = () => {
+            cancelAnimationFrame(animationFrameId);
+            checkTime();
+        };
+        video.addEventListener('play', handlePlay);
 
         return () => {
             video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-            video.removeEventListener('timeupdate', handleTimeUpdate);
+            video.removeEventListener('play', handlePlay);
+            cancelAnimationFrame(animationFrameId);
         };
     }, [startTime, endTime, onDurationChange, onTimeUpdate, videoUrl]);
 
@@ -60,6 +85,14 @@ export function VideoPreview({
             videoRef.current.currentTime = startTime;
         }
     }, [startTime]);
+
+    // Seek video when currentTime changes externally (e.g., from cursor drag)
+    useEffect(() => {
+        const video = videoRef.current;
+        if (video && Math.abs(video.currentTime - currentTime) > 0.1) {
+            video.currentTime = currentTime;
+        }
+    }, [currentTime]);
 
     return (
         <Card className="overflow-hidden">

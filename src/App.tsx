@@ -44,6 +44,10 @@ function App() {
     setCurrentTime(time);
   }, []);
 
+  const handleCurrentTimeChange = useCallback((time: number) => {
+    setCurrentTime(time);
+  }, []);
+
   const handleConvert = async () => {
     if (!videoFile) return;
 
@@ -119,6 +123,7 @@ function App() {
                 videoFile={videoFile}
                 startTime={startTime}
                 endTime={endTime}
+                currentTime={currentTime}
                 onDurationChange={handleDurationChange}
                 onTimeUpdate={handleTimeUpdate}
               />
@@ -131,6 +136,7 @@ function App() {
                     endTime={endTime}
                     currentTime={currentTime}
                     onTimeChange={handleTimeChange}
+                    onCurrentTimeChange={handleCurrentTimeChange}
                     videoFile={videoFile}
                   />
 

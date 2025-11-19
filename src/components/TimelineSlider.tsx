@@ -8,6 +8,7 @@ interface TimelineSliderProps {
     endTime: number;
     currentTime: number;
     onTimeChange: (startTime: number, endTime: number) => void;
+    onCurrentTimeChange?: (time: number) => void;
     videoFile: File | null;
 }
 
@@ -17,16 +18,18 @@ export function TimelineSlider({
     endTime,
     currentTime,
     onTimeChange,
+    onCurrentTimeChange,
     videoFile,
 }: TimelineSliderProps) {
     const sliderRef = useRef<HTMLDivElement>(null);
-    const [dragging, setDragging] = useState<'start' | 'end' | null>(null);
+    const [dragging, setDragging] = useState<'start' | 'end' | 'cursor' | null>(null);
     const [thumbnails, setThumbnails] = useState<string[]>([]);
     const [isGeneratingThumbnails, setIsGeneratingThumbnails] = useState(false);
 
     // Local state for smooth dragging without triggering parent updates
     const [localStartTime, setLocalStartTime] = useState(startTime);
     const [localEndTime, setLocalEndTime] = useState(endTime);
+    const [localCurrentTime, setLocalCurrentTime] = useState(currentTime);
 
     // Sync local state with props when not dragging
     useEffect(() => {
@@ -35,6 +38,12 @@ export function TimelineSlider({
             setLocalEndTime(endTime);
         }
     }, [startTime, endTime, dragging]);
+
+    useEffect(() => {
+        if (dragging !== 'cursor') {
+            setLocalCurrentTime(currentTime);
+        }
+    }, [currentTime, dragging]);
 
     // Generate thumbnails
     useEffect(() => {
@@ -111,11 +120,13 @@ export function TimelineSlider({
     // Refs for event listeners to avoid re-binding
     const localStartTimeRef = useRef(localStartTime);
     const localEndTimeRef = useRef(localEndTime);
+    const localCurrentTimeRef = useRef(localCurrentTime);
 
     useEffect(() => {
         localStartTimeRef.current = localStartTime;
         localEndTimeRef.current = localEndTime;
-    }, [localStartTime, localEndTime]);
+        localCurrentTimeRef.current = localCurrentTime;
+    }, [localStartTime, localEndTime, localCurrentTime]);
 
     const getTimeFromPosition = useCallback(
         (clientX: number): number => {
@@ -128,7 +139,7 @@ export function TimelineSlider({
     );
 
     const handleMouseDown = useCallback(
-        (e: React.MouseEvent, handle: 'start' | 'end') => {
+        (e: React.MouseEvent, handle: 'start' | 'end' | 'cursor') => {
             e.preventDefault();
             setDragging(handle);
         },
@@ -145,17 +156,37 @@ export function TimelineSlider({
                 // Ensure start time doesn't exceed end time
                 const newStartTime = Math.min(time, localEndTimeRef.current - 0.1); // minimal gap
                 setLocalStartTime(newStartTime);
-            } else {
+            } else if (dragging === 'end') {
                 // Ensure end time doesn't go below start time
                 const newEndTime = Math.max(time, localStartTimeRef.current + 0.1); // minimal gap
                 setLocalEndTime(newEndTime);
+            } else if (dragging === 'cursor') {
+                // Clamp cursor to valid range
+                const clampedTime = Math.max(localStartTimeRef.current, Math.min(time, localEndTimeRef.current));
+                setLocalCurrentTime(clampedTime);
             }
         };
 
         const handleMouseUp = () => {
+            if (dragging === 'cursor') {
+                // Check if cursor was dragged outside bounds and snap to nearest handle
+                const time = localCurrentTimeRef.current;
+                const distToStart = Math.abs(time - localStartTimeRef.current);
+                const distToEnd = Math.abs(time - localEndTimeRef.current);
+
+                // If at boundary, snap to that handle
+                if (time <= localStartTimeRef.current || distToStart < 0.1) {
+                    onCurrentTimeChange?.(localStartTimeRef.current);
+                } else if (time >= localEndTimeRef.current || distToEnd < 0.1) {
+                    onCurrentTimeChange?.(localEndTimeRef.current);
+                } else {
+                    onCurrentTimeChange?.(time);
+                }
+            } else {
+                // Commit the handle changes
+                onTimeChange(localStartTimeRef.current, localEndTimeRef.current);
+            }
             setDragging(null);
-            // Commit the changes
-            onTimeChange(localStartTimeRef.current, localEndTimeRef.current);
         };
 
         document.addEventListener('mousemove', handleMouseMove);
@@ -213,8 +244,12 @@ export function TimelineSlider({
 
                     {/* Playback Cursor */}
                     <div
-                        className="absolute top-0 bottom-0 w-0.5 bg-red-500 pointer-events-none z-30 ml-[8px]"
-                        style={{ left: `${(currentTime / duration) * 100}%` }}
+                        className={cn(
+                            "absolute top-0 bottom-0 w-1 bg-red-500 z-30 ml-[8px] cursor-grab active:cursor-grabbing",
+                            dragging === 'cursor' && "w-1.5"
+                        )}
+                        style={{ left: `${(localCurrentTime / duration) * 100}%` }}
+                        onMouseDown={(e) => handleMouseDown(e, 'cursor')}
                     />
 
                     {/* Time markers */}
