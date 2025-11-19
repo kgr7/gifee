@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 
 export interface Settings {
     frameRate: number;
-    quality: number;
+    quality: '360p' | '480p' | '720p';
 }
 
 interface SettingsPanelProps {
@@ -30,7 +30,7 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
                     <Slider
                         id="frame-rate"
                         min={5}
-                        max={30}
+                        max={50}
                         step={1}
                         value={[settings.frameRate]}
                         onValueChange={(value) =>
@@ -43,22 +43,30 @@ export function SettingsPanel({ settings, onSettingsChange }: SettingsPanelProps
                 </div>
 
                 <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="quality">Quality</Label>
-                        <span className="text-sm font-medium text-muted-foreground">
-                            {settings.quality}/10
-                        </span>
+                    <Label>Quality</Label>
+                    <div className="grid grid-cols-3 gap-4">
+                        {(['360p', '480p', '720p'] as const).map((q) => (
+                            <div key={q} className="flex items-center space-x-2">
+                                <input
+                                    type="radio"
+                                    id={`quality-${q}`}
+                                    name="quality"
+                                    value={q}
+                                    checked={settings.quality === q}
+                                    onChange={(e) =>
+                                        onSettingsChange({
+                                            ...settings,
+                                            quality: e.target.value as '360p' | '480p' | '720p',
+                                        })
+                                    }
+                                    className="h-4 w-4 border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <Label htmlFor={`quality-${q}`} className="font-normal">
+                                    {q}
+                                </Label>
+                            </div>
+                        ))}
                     </div>
-                    <Slider
-                        id="quality"
-                        min={1}
-                        max={10}
-                        step={1}
-                        value={[settings.quality]}
-                        onValueChange={(value) =>
-                            onSettingsChange({ ...settings, quality: value[0] })
-                        }
-                    />
                     <p className="text-xs text-muted-foreground">
                         Higher quality = better visuals but larger file size
                     </p>

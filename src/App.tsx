@@ -16,7 +16,7 @@ function App() {
   const [endTime, setEndTime] = useState<number>(0);
   const [settings, setSettings] = useState<Settings>({
     frameRate: 10,
-    quality: 10,
+    quality: '480p',
   });
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [isModalOpen, setIsModalOpen] = useState(false);

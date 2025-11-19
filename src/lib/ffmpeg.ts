@@ -33,8 +33,8 @@ export async function getFFmpeg(): Promise<FFmpeg> {
 async function loadFFmpeg(): Promise<FFmpeg> {
     const ffmpeg = new FFmpeg();
 
-    // Use multi-threaded version for better compatibility
-    const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm';
+    // Use single-threaded version to prevent browser hangs with complex filters
+    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
 
     ffmpeg.on('log', ({ message }) => {
         console.log('[FFmpeg]', message);
@@ -45,7 +45,7 @@ async function loadFFmpeg(): Promise<FFmpeg> {
     });
 
     try {
-        console.log('[FFmpeg] Starting to load multi-threaded version...');
+        console.log('[FFmpeg] Starting to load single-threaded version...');
         console.log('[FFmpeg] Fetching core.js from:', `${baseURL}/ffmpeg-core.js`);
         const coreURL = await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript');
         console.log('[FFmpeg] Core.js blob URL created');
@@ -54,15 +54,11 @@ async function loadFFmpeg(): Promise<FFmpeg> {
         const wasmURL = await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm');
         console.log('[FFmpeg] WASM blob URL created');
 
-        console.log('[FFmpeg] Fetching worker from:', `${baseURL}/ffmpeg-core.worker.js`);
-        const workerURL = await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript');
-        console.log('[FFmpeg] Worker blob URL created');
-
         console.log('[FFmpeg] Loading FFmpeg with blob URLs...');
         await ffmpeg.load({
             coreURL,
             wasmURL,
-            workerURL,
+            // workerURL is not needed for single-threaded
         });
         console.log('[FFmpeg] Loaded successfully');
     } catch (error) {

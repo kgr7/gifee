@@ -3,7 +3,7 @@ import { fetchFile } from '@ffmpeg/util';
 
 export interface ConversionSettings {
     frameRate: number;
-    quality: number;
+    quality: '360p' | '480p' | '720p';
     startTime: number;
     endTime: number;
 }
@@ -31,16 +31,19 @@ export async function convertVideoToGif(
         // Write input file
         const inputFileName = 'input.mp4';
         const outputFileName = 'output.gif';
+        const paletteFileName = 'palette.png';
 
         console.log('[Converter] Writing input file to FFmpeg virtual filesystem...');
         await ffmpeg.writeFile(inputFileName, await fetchFile(videoFile));
         console.log('[Converter] Input file written successfully');
 
-        onProgress?.({ progress: 30, message: 'Converting to GIF...' });
-
         // Build FFmpeg command with user settings
         const duration = settings.endTime - settings.startTime;
-        const scale = settings.quality >= 8 ? '480:-1' : '360:-1';
+
+        // Scale logic: 
+        let scale = '480:-1';
+        if (settings.quality === '360p') scale = '360:-1';
+        else if (settings.quality === '720p') scale = '720:-1';
 
         console.log('[Converter] Starting conversion with settings:', {
             startTime: settings.startTime,
@@ -50,24 +53,44 @@ export async function convertVideoToGif(
             scale,
         });
 
-        // Single-pass conversion (Simpler for debugging, fixes slow motion)
-        // We skip palette generation for now to isolate the issue
-        console.log('[Converter] Starting single-pass conversion...');
+        // 2-Pass Conversion with Palette Optimization (User Requested)
+        // Pass 1: Generate Palette
+        // Pass 2: Generate GIF using Palette and Bayer Dithering
+
+        console.log('[Converter] Pass 1: Generating color palette...');
+        onProgress?.({ progress: 30, message: 'Generating palette...' });
+
         await ffmpeg.exec([
             '-ss', settings.startTime.toString(),
             '-t', duration.toString(),
             '-i', inputFileName,
-            // Use simple -vf filter instead of complex -lavfi
-            // This sets the FPS (fixing slow motion) and scales the video
-            '-vf', `fps=${settings.frameRate},scale=${scale}:flags=lanczos`,
+            '-vf', `fps=${settings.frameRate},scale=${scale}:flags=lanczos,palettegen=max_colors=128`,
             '-threads', '1',
+            paletteFileName
+        ]);
+        console.log('[Converter] Palette generated');
+
+        // Pass 2: Create GIF with Palette and Dithering
+        console.log('[Converter] Pass 2: Creating GIF with palette and dithering...');
+        onProgress?.({ progress: 60, message: 'Rendering GIF...' });
+
+        await ffmpeg.exec([
+            '-ss', settings.startTime.toString(),
+            '-t', duration.toString(),
+            '-i', inputFileName,
+            '-i', paletteFileName,
+            '-lavfi', `[0:v]fps=${settings.frameRate},scale=${scale}:flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle`,
+            '-threads', '1',
+            '-gifflags', '+transdiff',
             '-loop', '0',
             outputFileName
         ]);
-        console.log("[Converter] GIF created successfully");
+        console.log("[Converter] GIF created successfully (Optimized)");
 
-        // Clean up palette if it exists (from previous runs)
-        try { await ffmpeg.deleteFile('palette.png'); } catch (e) { /* ignore */ }
+        // Clean up intermediate files
+        try {
+            await ffmpeg.deleteFile(paletteFileName);
+        } catch (e) { /* ignore */ }
 
         onProgress?.({ progress: 90, message: 'Finalizing...' });
 
