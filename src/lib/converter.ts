@@ -21,10 +21,41 @@ export async function convertVideoToGif(
     settings: ConversionSettings,
     onProgress?: (progress: ConversionProgress) => void
 ): Promise<Blob> {
+    let ffmpeg: any = null;
+    let progressListener: ((event: { progress: number; time: number }) => void) | null = null;
+
     try {
         onProgress?.({ progress: 0, message: 'Loading FFmpeg...' });
 
-        const ffmpeg = await getFFmpeg();
+        ffmpeg = await getFFmpeg();
+
+        // Track current phase for progress calculation
+        let currentPhase: 'palette' | 'encoding' | 'none' = 'none';
+
+        progressListener = ({ progress }: { progress: number; time: number }) => {
+            // Ensure progress is between 0 and 1
+            const p = Math.max(0, Math.min(1, progress));
+
+            if (currentPhase === 'palette') {
+                // Palette generation: 10% -> 25%
+                // This phase is usually fast
+                const percentage = 10 + (p * 15);
+                onProgress?.({
+                    progress: percentage,
+                    message: 'Generating palette...'
+                });
+            } else if (currentPhase === 'encoding') {
+                // GIF Encoding: 25% -> 90%
+                // This is the main heavy lifting
+                const percentage = 25 + (p * 65);
+                onProgress?.({
+                    progress: percentage,
+                    message: 'Rendering GIF...'
+                });
+            }
+        };
+
+        ffmpeg.on('progress', progressListener);
 
         onProgress?.({ progress: 10, message: 'Processing video...' });
 
@@ -58,7 +89,7 @@ export async function convertVideoToGif(
         // Pass 2: Generate GIF using Palette and Bayer Dithering
 
         console.log('[Converter] Pass 1: Generating color palette...');
-        onProgress?.({ progress: 30, message: 'Generating palette...' });
+        currentPhase = 'palette';
 
         await ffmpeg.exec([
             '-ss', settings.startTime.toString(),
@@ -72,7 +103,7 @@ export async function convertVideoToGif(
 
         // Pass 2: Create GIF with Palette and Dithering
         console.log('[Converter] Pass 2: Creating GIF with palette and dithering...');
-        onProgress?.({ progress: 60, message: 'Rendering GIF...' });
+        currentPhase = 'encoding';
 
         await ffmpeg.exec([
             '-ss', settings.startTime.toString(),
@@ -92,6 +123,7 @@ export async function convertVideoToGif(
             await ffmpeg.deleteFile(paletteFileName);
         } catch (e) { /* ignore */ }
 
+        currentPhase = 'none';
         onProgress?.({ progress: 90, message: 'Finalizing...' });
 
         // Read output file
@@ -115,6 +147,10 @@ export async function convertVideoToGif(
     } catch (error) {
         console.error('Conversion error:', error);
         throw new Error(`Failed to convert video: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+        if (ffmpeg && progressListener) {
+            ffmpeg.off('progress', progressListener);
+        }
     }
 }
 
