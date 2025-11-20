@@ -132,8 +132,11 @@ export function TimelineSlider({
         (clientX: number): number => {
             if (!sliderRef.current) return 0;
             const rect = sliderRef.current.getBoundingClientRect();
-            const position = (clientX - rect.left) / rect.width;
-            return Math.max(0, Math.min(duration, position * duration));
+            const padding = 8; // 0.5rem to match UI inset
+            const availableWidth = rect.width - (padding * 2);
+            const position = clientX - rect.left - padding;
+            const percent = Math.max(0, Math.min(1, position / availableWidth));
+            return percent * duration;
         },
         [duration]
     );
@@ -213,9 +216,9 @@ export function TimelineSlider({
                 className="relative h-16 cursor-pointer select-none"
             >
                 {/* Track Background & Content (Clipped) */}
-                <div className="absolute inset-0 bg-muted rounded-lg overflow-hidden">
+                <div className="absolute top-0 bottom-0 bg-muted/50 border border-white/10 rounded-lg w-full overflow-hidden shadow-inner">
                     {/* Thumbnails Background */}
-                    <div className="absolute inset-0 flex opacity-50 pointer-events-none">
+                    <div className="absolute inset-0 flex opacity-75 pointer-events-none">
                         {thumbnails.map((src, index) => (
                             <div key={index} className="flex-1 h-full relative overflow-hidden">
                                 <img
@@ -235,7 +238,7 @@ export function TimelineSlider({
 
                     {/* Selected Range */}
                     <div
-                        className="absolute top-0 bottom-0 bg-primary/20 border-y-2 border-primary z-20 pointer-events-none"
+                        className="absolute top-0 bottom-0 bg-primary/40 border-y-2 border-primary z-20 pointer-events-none"
                         style={{
                             left: `${startPercent}%`,
                             right: `${100 - endPercent}%`,
@@ -245,20 +248,20 @@ export function TimelineSlider({
                     {/* Playback Cursor */}
                     <div
                         className={cn(
-                            "absolute top-0 bottom-0 w-1 bg-red-500 z-[5] ml-[8px] cursor-grab active:cursor-grabbing",
-                            dragging === 'cursor' && "w-1.5 shadow-[0_0_20px_rgba(239,68,68,0.8)] scale-y-105"
+                            "absolute top-0 bottom-0 w-1.5 bg-red-600 z-30 ml-[8px] cursor-grab active:cursor-grabbing shadow-[0_0_16px_rgba(239,68,68,1)] mix-blend-mode-screen",
+                            dragging === 'cursor' && "w-2 shadow-[0_0_28px_rgba(239,68,68,1)] scale-y-105"
                         )}
                         style={{ left: `${(localCurrentTime / duration) * 100}%` }}
                         onMouseDown={(e) => handleMouseDown(e, 'cursor')}
                     >
                         {dragging === 'cursor' && (
-                            <div className="absolute inset-0 bg-red-400 animate-pulse opacity-50 rounded-full blur-sm" />
+                            <div className="absolute inset-0 bg-red-400 animate-pulse rounded-full" />
                         )}
                     </div>
 
                     {/* Time markers */}
                     <div className="absolute inset-x-0 bottom-0 flex justify-between px-2 pb-1 text-xs text-white z-30 drop-shadow-md font-medium"
-                        style={{ marginLeft: '8px', marginRight: '8px' }}
+                        style={{ marginLeft: '16px', marginRight: '16px' }}
                     >
                         <span>0:00</span>
                         <span>{formatTime(duration)}</span>
@@ -268,10 +271,10 @@ export function TimelineSlider({
                 {/* Start Handle - Outside overflow container with high z-index */}
                 <div
                     className={cn(
-                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-50",
-                        dragging === 'start' && "scale-125 shadow-lg"
+                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-50 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow",
+                        dragging === 'start' && "scale-125 shadow-xl shadow-primary/50"
                     )}
-                    style={{ left: `${startPercent}%`, transform: 'translate(-50%, -50%)' }}
+                    style={{ left: `calc((100% - 1rem) * ${startPercent / 100})`, transform: 'translateY(-50%)' }}
                     onMouseDown={(e) => handleMouseDown(e, 'start')}
                 >
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -282,10 +285,10 @@ export function TimelineSlider({
                 {/* End Handle - Outside overflow container with high z-index */}
                 <div
                     className={cn(
-                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-50",
-                        dragging === 'end' && "scale-125 shadow-lg"
+                        "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-50 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow",
+                        dragging === 'end' && "scale-125 shadow-xl shadow-primary/50"
                     )}
-                    style={{ left: `${endPercent}%`, transform: 'translate(-50%, -50%)' }}
+                    style={{ right: `calc((100% - 1rem) * ${(100 - endPercent) / 100})`, transform: 'translateY(-50%)' }}
                     onMouseDown={(e) => handleMouseDown(e, 'end')}
                 >
                     <div className="absolute inset-0 flex items-center justify-center">

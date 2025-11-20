@@ -126,7 +126,7 @@ export function VideoPreview({
     return (
         <Card className="overflow-hidden w-fit mx-auto">
             <div
-                className="relative bg-black group max-h-[500px] w-auto"
+                className="relative bg-black/20 backdrop-blur-sm group max-h-[500px] w-auto mx-auto"
                 style={{ aspectRatio: aspectRatio.toString() }}
             >
                 {videoUrl && (
@@ -143,7 +143,7 @@ export function VideoPreview({
                             <Button
                                 size="lg"
                                 variant="secondary"
-                                className="pointer-events-auto rounded-full w-16 h-16 p-0 bg-black/50 hover:bg-black/70 backdrop-blur-sm"
+                                className="pointer-events-auto rounded-full w-16 h-16 p-0 bg-black/40 hover:bg-black/60 backdrop-blur-md border border-white/10 text-white"
                                 onClick={togglePlayPause}
                             >
                                 {isPlaying ? (
