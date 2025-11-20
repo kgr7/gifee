@@ -26,10 +26,10 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
             setIsDragging(false);
 
             const file = e.dataTransfer.files[0];
-            if (file && file.type === 'video/mp4') {
+            if (file && (file.type === 'video/mp4' || file.type === 'video/quicktime')) {
                 onFileSelect(file);
             } else {
-                alert('Please select an MP4 video file');
+                alert('Please select an MP4 or MOV video file');
             }
         },
         [onFileSelect]
@@ -73,14 +73,14 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
                         {isDragging ? 'Drop your video here' : 'Upload your video'}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                        Drag and drop your MP4 file here, or click to browse
+                        Drag and drop your MP4 or MOV file here, or click to browse
                     </p>
                 </div>
 
                 <div className="relative">
                     <input
                         type="file"
-                        accept="video/mp4"
+                        accept="video/mp4,video/quicktime"
                         onChange={handleFileInput}
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         id="file-upload"
@@ -93,7 +93,7 @@ export function FileUpload({ onFileSelect }: FileUploadProps) {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                    Supported format: MP4
+                    Supported formats: MP4, MOV
                 </p>
             </div>
         </div>
