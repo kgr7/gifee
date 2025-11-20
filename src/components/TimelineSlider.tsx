@@ -235,7 +235,7 @@ export function TimelineSlider({
 
                     {/* Selected Range */}
                     <div
-                        className="absolute top-0 bottom-0 bg-primary/20 border-y-2 border-primary z-10"
+                        className="absolute top-0 bottom-0 bg-primary/20 border-y-2 border-primary z-20 pointer-events-none"
                         style={{
                             left: `${startPercent}%`,
                             right: `${100 - endPercent}%`,
@@ -245,12 +245,16 @@ export function TimelineSlider({
                     {/* Playback Cursor */}
                     <div
                         className={cn(
-                            "absolute top-0 bottom-0 w-1 bg-red-500 z-30 ml-[8px] cursor-grab active:cursor-grabbing",
-                            dragging === 'cursor' && "w-1.5"
+                            "absolute top-0 bottom-0 w-1 bg-red-500 z-[5] ml-[8px] cursor-grab active:cursor-grabbing",
+                            dragging === 'cursor' && "w-1.5 shadow-[0_0_20px_rgba(239,68,68,0.8)] scale-y-105"
                         )}
                         style={{ left: `${(localCurrentTime / duration) * 100}%` }}
                         onMouseDown={(e) => handleMouseDown(e, 'cursor')}
-                    />
+                    >
+                        {dragging === 'cursor' && (
+                            <div className="absolute inset-0 bg-red-400 animate-pulse opacity-50 rounded-full blur-sm" />
+                        )}
+                    </div>
 
                     {/* Time markers */}
                     <div className="absolute inset-x-0 bottom-0 flex justify-between px-2 pb-1 text-xs text-white z-30 drop-shadow-md font-medium"
