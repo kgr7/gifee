@@ -6,6 +6,7 @@ import { SettingsPanel, type Settings } from './components/SettingsPanel';
 import { ConversionModal } from './components/ConversionModal';
 import { ThemeToggle } from './components/ThemeToggle';
 import { Button } from './components/ui/button';
+import { Card } from './components/ui/card';
 import { convertVideoToGif, type ConversionProgress } from './lib/converter';
 import { Sparkles } from 'lucide-react';
 
@@ -97,72 +98,74 @@ function App() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Sparkles className="w-8 h-8 text-primary" />
+        <Card className="p-8">
+          {/* Header */}
+          <header className="flex items-center justify-between mb-8 pb-8 border-border">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Sparkles className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Gifee</h1>
+                <p className="text-sm text-muted-foreground">
+                  Convert videos to GIFs instantly
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Gifee</h1>
-              <p className="text-sm text-muted-foreground">
-                Convert videos to GIFs instantly
-              </p>
-            </div>
+            <ThemeToggle />
+          </header>
+
+          {/* Main Content */}
+          <div className="space-y-8">
+            {!videoFile ? (
+              <FileUpload onFileSelect={handleFileSelect} />
+            ) : (
+              <>
+                <VideoPreview
+                  videoFile={videoFile}
+                  startTime={startTime}
+                  endTime={endTime}
+                  currentTime={currentTime}
+                  onDurationChange={handleDurationChange}
+                  onTimeUpdate={handleTimeUpdate}
+                />
+
+                {videoDuration > 0 && (
+                  <>
+                    <TimelineSlider
+                      duration={videoDuration}
+                      startTime={startTime}
+                      endTime={endTime}
+                      currentTime={currentTime}
+                      onTimeChange={handleTimeChange}
+                      onCurrentTimeChange={handleCurrentTimeChange}
+                      videoFile={videoFile}
+                    />
+
+                    <SettingsPanel
+                      settings={settings}
+                      onSettingsChange={setSettings}
+                    />
+
+                    <div className="flex gap-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setVideoFile(null)}
+                        className="flex-1"
+                      >
+                        Choose Different Video
+                      </Button>
+                      <Button onClick={handleConvert} className="flex-1" size="lg">
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Convert to GIF
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
-          <ThemeToggle />
-        </header>
-
-        {/* Main Content */}
-        <div className="space-y-8">
-          {!videoFile ? (
-            <FileUpload onFileSelect={handleFileSelect} />
-          ) : (
-            <>
-              <VideoPreview
-                videoFile={videoFile}
-                startTime={startTime}
-                endTime={endTime}
-                currentTime={currentTime}
-                onDurationChange={handleDurationChange}
-                onTimeUpdate={handleTimeUpdate}
-              />
-
-              {videoDuration > 0 && (
-                <>
-                  <TimelineSlider
-                    duration={videoDuration}
-                    startTime={startTime}
-                    endTime={endTime}
-                    currentTime={currentTime}
-                    onTimeChange={handleTimeChange}
-                    onCurrentTimeChange={handleCurrentTimeChange}
-                    videoFile={videoFile}
-                  />
-
-                  <SettingsPanel
-                    settings={settings}
-                    onSettingsChange={setSettings}
-                  />
-
-                  <div className="flex gap-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setVideoFile(null)}
-                      className="flex-1"
-                    >
-                      Choose Different Video
-                    </Button>
-                    <Button onClick={handleConvert} className="flex-1" size="lg">
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Convert to GIF
-                    </Button>
-                  </div>
-                </>
-              )}
-            </>
-          )}
-        </div>
+        </Card>
 
         {/* Footer */}
         <footer className="mt-16 text-center text-sm text-muted-foreground">

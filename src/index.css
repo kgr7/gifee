@@ -69,22 +69,55 @@
 @layer base {
   * {
     @apply border-border;
+    transition: border-color 0.3s ease-in-out, background-color 0.3s ease-in-out, color 0.3s ease-in-out;
   }
 
   body {
     @apply bg-background text-foreground min-h-screen;
+    position: relative;
+  }
+
+  /* Dark mode background (default) */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -2;
     background-image:
       radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
       radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
       radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
-    background-attachment: fixed;
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
   }
 
-  /* Light mode gradient override */
-  :root:not(.dark) body {
+  /* Light mode background */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
     background-image:
-      radial-gradient(at 0% 0%, hsla(192, 95%, 90%, 1) 0, transparent 50%),
-      radial-gradient(at 50% 0%, hsla(225, 95%, 90%, 1) 0, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(280, 95%, 90%, 1) 0, transparent 50%);
+      radial-gradient(at 0% 0%, hsla(35, 85%, 88%, 1) 0, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(200, 80%, 88%, 1) 0, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(320, 75%, 90%, 1) 0, transparent 50%);
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
+  }
+
+  /* Light mode - fade in light background */
+  :root:not(.dark) body::after {
+    opacity: 1;
+  }
+
+  /* Light mode - fade out dark background */
+  :root:not(.dark) body::before {
+    opacity: 0;
   }
 }
