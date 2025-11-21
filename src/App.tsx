@@ -5,6 +5,7 @@ import { TimelineSlider } from './components/TimelineSlider';
 import { SettingsPanel, type Settings } from './components/SettingsPanel';
 import { ConversionModal } from './components/ConversionModal';
 import { ThemeToggle } from './components/ThemeToggle';
+import { ErrorLogger } from './components/ErrorLogger';
 import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 import { convertVideoToGif, type ConversionProgress } from './lib/converter';
@@ -181,6 +182,9 @@ function App() {
           error={error}
           onDownload={handleDownload}
         />
+
+        {/* Debug Logger for iOS */}
+        <ErrorLogger />
       </div>
     </div>
   );

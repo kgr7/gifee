@@ -46,7 +46,10 @@ export function VideoPreview({
                 setAspectRatio(video.videoWidth / video.videoHeight);
             }
             // Auto-play on load
-            video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+            video.play().then(() => setIsPlaying(true)).catch((err) => {
+                console.error('Autoplay failed:', err);
+                setIsPlaying(false);
+            });
         };
 
         let animationFrameId: number;
@@ -108,7 +111,11 @@ export function VideoPreview({
     useEffect(() => {
         const video = videoRef.current;
         if (video && Math.abs(video.currentTime - currentTime) > 0.1) {
-            video.currentTime = currentTime;
+            try {
+                video.currentTime = currentTime;
+            } catch (err) {
+                console.error('Video seeking failed:', err);
+            }
         }
     }, [currentTime]);
 
@@ -136,6 +143,8 @@ export function VideoPreview({
                             src={videoUrl}
                             className="w-full h-full"
                             onClick={togglePlayPause}
+                            muted
+                            playsInline
                         />
 
                         {/* Play/Pause Button Overlay */}

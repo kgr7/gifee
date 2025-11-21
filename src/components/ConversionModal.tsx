@@ -33,7 +33,7 @@ export function ConversionModal({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>
                         {error
@@ -72,7 +72,7 @@ export function ConversionModal({
                             <img
                                 src={URL.createObjectURL(gifBlob)}
                                 alt="Converted GIF preview"
-                                className="max-w-full rounded-lg border"
+                                className="max-w-full max-h-[50vh] rounded-lg border"
                             />
                         </div>
                     )}

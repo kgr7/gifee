@@ -94,8 +94,14 @@ export function TimelineSlider({
                     const time = i * interval;
                     video.currentTime = time;
 
-                    await new Promise<void>((resolve) => {
+                    await new Promise<void>((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            video.removeEventListener('seeked', onSeeked);
+                            reject(new Error('Seek timeout'));
+                        }, 3000); // 3 second timeout per seek
+
                         const onSeeked = () => {
+                            clearTimeout(timeout);
                             video.removeEventListener('seeked', onSeeked);
                             resolve();
                         };
@@ -106,8 +112,11 @@ export function TimelineSlider({
                     newThumbnails.push(canvas.toDataURL('image/jpeg', 0.7));
                 }
                 setThumbnails(newThumbnails);
+                console.log(`Successfully generated ${newThumbnails.length} thumbnails`);
             } catch (error) {
-                console.error("Error generating thumbnails:", error);
+                console.error("Error generating thumbnails (iOS may not support this):", error);
+                // On iOS, thumbnails may fail - that's okay, timeline will still work
+                setThumbnails([]);
             } finally {
                 URL.revokeObjectURL(video.src);
                 setIsGeneratingThumbnails(false);
