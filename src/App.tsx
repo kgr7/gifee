@@ -97,17 +97,17 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <Card className="p-8">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 max-w-5xl">
+        <Card className="p-4 sm:p-8">
           {/* Header */}
-          <header className="flex items-center justify-between mb-8 pb-8 border-border">
+          <header className="flex items-center justify-between mb-4 sm:mb-8 pb-4 sm:pb-8 border-border">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Sparkles className="w-8 h-8 text-primary" />
+              <div className="p-1.5 sm:p-2 rounded-lg bg-primary/10">
+                <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Gifee</h1>
-                <p className="text-sm text-muted-foreground">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Gifee</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Convert videos to GIFs instantly
                 </p>
               </div>
@@ -116,7 +116,7 @@ function App() {
           </header>
 
           {/* Main Content */}
-          <div className="space-y-8">
+          <div className="space-y-4 sm:space-y-8">
             {!videoFile ? (
               <FileUpload onFileSelect={handleFileSelect} />
             ) : (
@@ -147,7 +147,7 @@ function App() {
                       onSettingsChange={setSettings}
                     />
 
-                    <div className="flex gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4">
                       <Button
                         variant="outline"
                         onClick={() => setVideoFile(null)}
@@ -155,7 +155,7 @@ function App() {
                       >
                         Choose Different Video
                       </Button>
-                      <Button onClick={handleConvert} className="flex-1" size="lg">
+                      <Button onClick={handleConvert} className="flex-1">
                         <Sparkles className="w-4 h-4 mr-2" />
                         Convert to GIF
                       </Button>

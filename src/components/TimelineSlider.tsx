@@ -141,8 +141,19 @@ export function TimelineSlider({
         [duration]
     );
 
+    // Helper to get clientX from mouse or touch event
+    const getClientX = (e: MouseEvent | TouchEvent): number => {
+        if ('touches' in e && e.touches.length > 0) {
+            return e.touches[0].clientX;
+        }
+        if ('changedTouches' in e && e.changedTouches.length > 0) {
+            return e.changedTouches[0].clientX;
+        }
+        return (e as MouseEvent).clientX;
+    };
+
     const handleMouseDown = useCallback(
-        (e: React.MouseEvent, handle: 'start' | 'end' | 'cursor') => {
+        (e: React.MouseEvent | React.TouchEvent, handle: 'start' | 'end' | 'cursor') => {
             e.preventDefault();
             setDragging(handle);
         },
@@ -152,8 +163,10 @@ export function TimelineSlider({
     useEffect(() => {
         if (!dragging) return;
 
-        const handleMouseMove = (e: MouseEvent) => {
-            const time = getTimeFromPosition(e.clientX);
+        const handleMove = (e: MouseEvent | TouchEvent) => {
+            e.preventDefault(); // Prevent scrolling on touch
+            const clientX = getClientX(e);
+            const time = getTimeFromPosition(clientX);
 
             if (dragging === 'start') {
                 // Ensure start time doesn't exceed end time
@@ -170,7 +183,7 @@ export function TimelineSlider({
             }
         };
 
-        const handleMouseUp = () => {
+        const handleEnd = () => {
             if (dragging === 'cursor') {
                 // Check if cursor was dragged outside bounds and snap to nearest handle
                 const time = localCurrentTimeRef.current;
@@ -192,14 +205,19 @@ export function TimelineSlider({
             setDragging(null);
         };
 
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
+        // Add both mouse and touch listeners
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('touchend', handleEnd);
 
         return () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('mouseup', handleEnd);
+            document.removeEventListener('touchmove', handleMove);
+            document.removeEventListener('touchend', handleEnd);
         };
-    }, [dragging, getTimeFromPosition, onTimeChange]);
+    }, [dragging, getTimeFromPosition, onTimeChange, onCurrentTimeChange]);
 
     const startPercent = (localStartTime / duration) * 100;
     const endPercent = (localEndTime / duration) * 100;
@@ -214,6 +232,7 @@ export function TimelineSlider({
             <div
                 ref={sliderRef}
                 className="relative h-16 cursor-pointer select-none"
+                style={{ touchAction: 'none' }}
             >
                 {/* Track Background & Content (Clipped) */}
                 <div className="absolute top-0 bottom-0 bg-muted/50 border border-white/10 rounded-lg w-full overflow-hidden shadow-inner">
@@ -251,8 +270,9 @@ export function TimelineSlider({
                             "absolute top-0 bottom-0 w-1.5 bg-red-600 z-30 ml-[8px] cursor-grab active:cursor-grabbing shadow-[0_0_16px_rgba(239,68,68,1)] mix-blend-mode-screen",
                             dragging === 'cursor' && "w-2 shadow-[0_0_28px_rgba(239,68,68,1)] scale-y-105"
                         )}
-                        style={{ left: `${(localCurrentTime / duration) * 100}%` }}
+                        style={{ left: `${(localCurrentTime / duration) * 100}%`, touchAction: 'none' }}
                         onMouseDown={(e) => handleMouseDown(e, 'cursor')}
+                        onTouchStart={(e) => handleMouseDown(e, 'cursor')}
                     >
                         {dragging === 'cursor' && (
                             <div className="absolute inset-0 bg-red-400 animate-pulse rounded-full" />
@@ -274,8 +294,9 @@ export function TimelineSlider({
                         "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-50 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow",
                         dragging === 'start' && "scale-125 shadow-xl shadow-primary/50"
                     )}
-                    style={{ left: `calc((100% - 1rem) * ${startPercent / 100})`, transform: 'translateY(-50%)' }}
+                    style={{ left: `calc((100% - 1rem) * ${startPercent / 100})`, transform: 'translateY(-50%)', touchAction: 'none' }}
                     onMouseDown={(e) => handleMouseDown(e, 'start')}
+                    onTouchStart={(e) => handleMouseDown(e, 'start')}
                 >
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-0.5 h-4 bg-primary-foreground/50 rounded" />
@@ -288,8 +309,9 @@ export function TimelineSlider({
                         "absolute top-1/2 -translate-y-1/2 w-4 h-full bg-primary rounded cursor-ew-resize z-50 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow",
                         dragging === 'end' && "scale-125 shadow-xl shadow-primary/50"
                     )}
-                    style={{ right: `calc((100% - 1rem) * ${(100 - endPercent) / 100})`, transform: 'translateY(-50%)' }}
+                    style={{ right: `calc((100% - 1rem) * ${(100 - endPercent) / 100})`, transform: 'translateY(-50%)', touchAction: 'none' }}
                     onMouseDown={(e) => handleMouseDown(e, 'end')}
+                    onTouchStart={(e) => handleMouseDown(e, 'end')}
                 >
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-0.5 h-4 bg-primary-foreground/50 rounded" />
