@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import {
     Dialog,
@@ -28,8 +29,20 @@ export function ConversionModal({
     error,
     onDownload,
 }: ConversionModalProps) {
+    const [gifPreviewUrl, setGifPreviewUrl] = useState<string | null>(null);
     const isConverting = progress !== null && !gifBlob && !error;
     const isComplete = gifBlob !== null;
+
+    // Manage GIF preview URL lifecycle to prevent memory leaks
+    useEffect(() => {
+        if (gifBlob) {
+            const url = URL.createObjectURL(gifBlob);
+            setGifPreviewUrl(url);
+            return () => URL.revokeObjectURL(url);
+        } else {
+            setGifPreviewUrl(null);
+        }
+    }, [gifBlob]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -67,10 +80,10 @@ export function ConversionModal({
                         </div>
                     )}
 
-                    {isComplete && gifBlob && (
+                    {isComplete && gifPreviewUrl && (
                         <div className="flex justify-center">
                             <img
-                                src={URL.createObjectURL(gifBlob)}
+                                src={gifPreviewUrl}
                                 alt="Converted GIF preview"
                                 className="max-w-full max-h-[50vh] rounded-lg border"
                             />

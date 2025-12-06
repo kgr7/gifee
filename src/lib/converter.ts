@@ -141,9 +141,7 @@ export async function convertVideoToGif(
         if (typeof data === 'string') {
             throw new Error('Unexpected string data from FFmpeg');
         }
-        const uint8Array = new Uint8Array(data);
-        const blob = new Blob([uint8Array], { type: 'image/gif' });
-        return blob;
+        return new Blob([new Uint8Array(data)], { type: 'image/gif' });
     } catch (error) {
         console.error('Conversion error:', error);
         throw new Error(`Failed to convert video: ${error instanceof Error ? error.message : 'Unknown error'}`);
