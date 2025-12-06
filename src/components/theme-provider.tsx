@@ -35,17 +35,24 @@ export function ThemeProvider({
 
         root.classList.remove("light", "dark")
 
-        if (theme === "system") {
-            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-                .matches
-                ? "dark"
-                : "light"
+        const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
+            .matches
+            ? "dark"
+            : "light"
 
-            root.classList.add(systemTheme)
-            return
+        root.classList.add(theme === "system" ? systemTheme : theme)
+
+        // Update meta theme-color for iOS Safari
+        const metaThemeColor = document.querySelector("meta[name='theme-color']")
+        const bgDark = "hsl(222.2, 84%, 4.9%)" // Matches index.css dark --background
+        const bgLight = "hsl(210, 40%, 98%)"  // Matches index.css light --background
+
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute(
+                "content",
+                (theme === "system" ? systemTheme : theme) === "dark" ? bgDark : bgLight
+            )
         }
-
-        root.classList.add(theme)
     }, [theme])
 
     const value = {
